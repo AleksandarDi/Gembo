@@ -12,6 +12,7 @@ haveFunFont = pygame.font.SysFont('Comic Sans MS', 50)
 tiles = pygame.image.load('Tiles.png')
 clock = pygame.time.Clock()
 timer = pygame.time
+level = 1
 fps = 27
 platforms = pygame.sprite.Group()
 for plat in PLATFORM_LIST_LEFT:
@@ -60,9 +61,10 @@ def MainLoop():
     # Main Loop
     global player, player1, players, player2, weapon, true, playerTime, isPlayerOne, shoot, hasShotOnce, shootTime,\
         power, angle, assignRole, isRightWall, isLeftWall, hitMyHead, startingPointForProjectileX, \
-        startingPointForProjectileY, timeForPlayer
+        startingPointForProjectileY, timeForPlayer, playerSpriteHead, playerSpriteBody
     # Setting the players starting health, character and position
-    LevelOneSetup()
+    if level == 1:
+        LevelOneSetup()
     isPlayerOne = True
     shoot = False
     hasShotOnce = False
@@ -167,12 +169,17 @@ def MainLoop():
             playerCollide = pygame.sprite.spritecollide(weapon, players, False)
             # Check if the projectile has hit the enemy player and damage him
             if playerCollide:
+                damage = 20
+                healthCut = 7
                 timeForPlayer = 5.4
                 shoot = False
                 start_time = timer.get_ticks() / 1000
                 if isPlayerOne:
-                    player2.health -= 20
-                    player2.healthbarWidth -= player.healthCut
+                    if playerCollide[0].rect[1] == player2.rect[1]:
+                        damage = 30
+                        healthCut = 10.5
+                    player2.health -= damage
+                    player2.healthbarWidth -= healthCut
                     if 40 < player2.health < 70:
                         player2.healthbarColor = (255, 255, 0)
                     if player2.health <= 40:
@@ -181,15 +188,17 @@ def MainLoop():
                         while player2.deathCount <= 5:
                             redrawGameWindow()
                             if player2.side:
-                                print(player2.right)
                                 player2.drawDeath(win, character2Death)
                             else:
                                 player2.drawDeath(win, character2LDeath)
                         EndLoop()
                         true = False
                 else:
-                    player1.health -= 20
-                    player1.healthbarWidth -= player.healthCut
+                    if playerCollide[0].rect[1] == player1.rect[1]:
+                        damage = 30
+                        healthCut = 10.5
+                    player1.health -= damage
+                    player1.healthbarWidth -= healthCut
                     if 40 < player1.health < 70:
                         player1.healthbarColor = (255, 255, 0)
                     if player1.health <= 40:
@@ -227,12 +236,20 @@ def MainLoop():
             timeForPlayer = 10.3
             players.remove(player1)
             players.remove(player2)
+            players.remove(playerSpriteHead)
+            players.remove(playerSpriteBody)
             if isPlayerOne:
                 player = player1
-                players.add(player2)
+                playerSpriteHead = PlayerSprites(player2.rect.x, player2.rect.y, 29, 22.5)
+                playerSpriteBody = PlayerSprites(player2.rect .x, player2.rect.y + 22.5, 29, 22.5)
+                players.add(playerSpriteHead)
+                players.add(playerSpriteBody)
             else:
                 player = player2
-                players.add(player1)
+                playerSpriteHead = PlayerSprites(player1.rect.x, player1.rect.y, 29, 22.5)
+                playerSpriteBody = PlayerSprites(player1.rect.x, player1.rect.y + 22.5, 29, 22.5)
+                players.add(playerSpriteHead)
+                players.add(playerSpriteBody)
             assignRole = False
             start_time = timer.get_ticks() / 1000
         # Set the time for a player
@@ -322,7 +339,7 @@ def redrawGameWindow():
 
 
 def LevelOneSetup():
-    global player, player1, players, player2, weapon
+    global player, player1, players, player2, weapon, playerSpriteHead, playerSpriteBody
     player1 = Player(75, 333, 29, 45)
     player2 = Player(1017, 240, 29, 45)
     player1.characterIdleR = character1R
@@ -337,7 +354,10 @@ def LevelOneSetup():
     # remove the players from the sprite in case they are both added so no self collision is done
     players = pygame.sprite.Group()
     # at the beginning of the game add the second player for collision with the ball because player one starts first
-    players.add(player2)
+    playerSpriteHead = PlayerSprites(player2.rect.x, player2.rect.y, 29, 22.5)
+    playerSpriteBody = PlayerSprites(player2.rect.x, player2.rect.y + 22.5, 29, 22.5)
+    players.add(playerSpriteHead)
+    players.add(playerSpriteBody)
     weapon = Weapon(player.pos.x + 20, player.pos.y + 30, 9)
 
 

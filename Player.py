@@ -30,7 +30,6 @@ character2LDeath = [pygame.image.load('Alien/DeathL0.png'), pygame.image.load('A
                     pygame.image.load('Alien/DeathL4.png'), pygame.image.load('Alien/DeathL5.png')]
 vec = pygame.math.Vector2
 platforms = pygame.sprite.Group()
-players = pygame.sprite.Group()
 for plat in PLATFORM_LIST_LEFT:
     p = Platform(*plat)
     platforms.add(p)
@@ -46,8 +45,7 @@ class Player(pygame.sprite.Sprite):
         self.width = width
         self.height = height
         self.health = 100
-        self.healthbarWidth = 29
-        self.healthCut = 7
+        self.healthbarWidth = 32
         self.sp = 5
         self.vel = vec(0, 0)
         self.healthbarColor = (0, 255, 0)
@@ -154,3 +152,13 @@ class Player(pygame.sprite.Sprite):
             self.pos.y += 2
             pygame.display.update()
             self.deathCount += 1
+
+
+class PlayerSprites(pygame.sprite.Sprite):
+    def __init__(self, x, y, w, h):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.Surface((w, h))
+        self.image.fill((0, 255, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
