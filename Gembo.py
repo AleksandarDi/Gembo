@@ -1,32 +1,26 @@
 from Player import *
 from Weapon import *
+import random
 
 # Setup code
+global level, background, tiles, tilesX, tilesY, platforms
 pygame.init()
 pygame.display.set_caption("GEMBO")
 win = pygame.display.set_mode((1200, 600), pygame.DOUBLEBUF)
-background = pygame.image.load('Background.jpg')
 menuBackground = pygame.image.load('MenuBackground.jpg')
 myFont = pygame.font.SysFont('Comic Sans MS', 30)
-haveFunFont = pygame.font.SysFont('Comic Sans MS', 50)
-tiles = pygame.image.load('Tiles.png')
+largeFont = pygame.font.SysFont('Comic Sans MS', 50)
 clock = pygame.time.Clock()
 timer = pygame.time
-level = 1
 fps = 27
-platforms = pygame.sprite.Group()
-for plat in PLATFORM_LIST_LEFT:
-    p = Platform(*plat)
-    platforms.add(p)
-for plat in PLATFORM_LIST_RIGHT:
-    p = Platform(*plat)
-    platforms.add(p)
 
 
 # Menu loop
 def MenuLoop():
+    global level
     menuTrue = True
     showInstructions = False
+    level = 1
     while menuTrue:
         clock.tick(fps)
         image = pygame.Surface((170, 30))
@@ -59,12 +53,18 @@ def MenuLoop():
 
 def MainLoop():
     # Main Loop
-    global player, player1, players, player2, weapon, true, playerTime, isPlayerOne, shoot, hasShotOnce, shootTime,\
+    global player, player1, players, player2, weapon, true, playerTime, isPlayerOne, shoot, hasShotOnce, shootTime, \
         power, angle, assignRole, isRightWall, isLeftWall, hitMyHead, startingPointForProjectileX, \
-        startingPointForProjectileY, timeForPlayer, playerSpriteHead, playerSpriteBody
+        startingPointForProjectileY, timeForPlayer, playerSpriteHead, playerSpriteBody, level, tilesY, tilesX, \
+        strength, platforms
     # Setting the players starting health, character and position
     if level == 1:
-        LevelOneSetup()
+        PlanetOneSetup()
+    elif level == 2:
+        PlanetTwoSetup(player1.wins, player2.wins)
+    elif level == 3:
+        if player1.wins != 2 or player2.wins != 2:
+            PlanetThreeSetup(player1.wins, player2.wins)
     isPlayerOne = True
     shoot = False
     hasShotOnce = False
@@ -82,6 +82,7 @@ def MainLoop():
     start_time = timer.get_ticks() / 1000
     # Start main game loop
     while true:
+        # print(pygame.mouse.get_pos())
         clock.tick(fps)
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -91,9 +92,11 @@ def MainLoop():
         if player.pos.y > 600:
             if isPlayerOne:
                 player1.health = 0
+                player2.wins += 1
                 EndLoop()
             else:
                 player2.health = 0
+                player1.wins += 1
                 EndLoop()
         elif not shoot:
             # PLAYER MOVING RIGHT
@@ -144,22 +147,21 @@ def MainLoop():
             weapon.x = player.pos.x + 20
             weapon.y = player.pos.y + 30
             line = [(weapon.x, weapon.y), pygame.mouse.get_pos()]
-            if keys[pygame.K_SPACE] and not player.isJump:
-                if not shoot and not hasShotOnce:
-                    startingPointForProjectileX = weapon.x
-                    startingPointForProjectileY = weapon.y
-                    pos = pygame.mouse.get_pos()
-                    shoot = True
-                    hasShotOnce = True
-                    if math.sqrt((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) / 4 > 100:
-                        power = 100
-                    else:
-                        power = math.sqrt((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) / 4
-                    angle = findAngle(pos)
+            if keys[pygame.K_SPACE] and not player.isJump and not shoot and not hasShotOnce:
+                startingPointForProjectileX = weapon.x
+                startingPointForProjectileY = weapon.y
+                pos = pygame.mouse.get_pos()
+                shoot = True
+                hasShotOnce = True
+                if math.sqrt((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) / 4 > 100:
+                    power = 100 * strength
+                else:
+                    power = math.sqrt((line[1][1] - line[0][1]) ** 2 + (line[1][0] - line[0][0]) ** 2) / 4 * strength
+                angle = findAngle(pos)
             # JUMPING
             if not player.isJump and timer.get_ticks() / 1000 - start_time < timeForPlayer:
                 if keys[pygame.K_UP] or keys[pygame.K_w]:
-                    player.jump()
+                    player.jump(platforms)
                     player.isJump = True
                     player.right = False
                     player.left = False
@@ -185,6 +187,7 @@ def MainLoop():
                     if player2.health <= 40:
                         player2.healthbarColor = (255, 0, 0)
                     if player2.health <= 0:
+                        player1.wins += 1
                         while player2.deathCount <= 5:
                             redrawGameWindow()
                             if player2.side:
@@ -204,6 +207,7 @@ def MainLoop():
                     if player1.health <= 40:
                         player1.healthbarColor = (255, 0, 0)
                     if player1.health <= 0:
+                        player2.wins += 1
                         while player1.deathCount <= 5:
                             redrawGameWindow()
                             if player1.side:
@@ -234,14 +238,11 @@ def MainLoop():
             hasShotOnce = False
             isPlayerOne = not isPlayerOne
             timeForPlayer = 10.3
-            players.remove(player1)
-            players.remove(player2)
-            players.remove(playerSpriteHead)
-            players.remove(playerSpriteBody)
+            players.empty()
             if isPlayerOne:
                 player = player1
                 playerSpriteHead = PlayerSprites(player2.rect.x, player2.rect.y, 29, 22.5)
-                playerSpriteBody = PlayerSprites(player2.rect .x, player2.rect.y + 22.5, 29, 22.5)
+                playerSpriteBody = PlayerSprites(player2.rect.x, player2.rect.y + 22.5, 29, 22.5)
                 players.add(playerSpriteHead)
                 players.add(playerSpriteBody)
             else:
@@ -252,6 +253,8 @@ def MainLoop():
                 players.add(playerSpriteBody)
             assignRole = False
             start_time = timer.get_ticks() / 1000
+            if level == 2:
+                strength = random.uniform(0.5, 1.5)
         # Set the time for a player
         playerTime = int(timeForPlayer - (timer.get_ticks() / 1000 - start_time))
         if timer.get_ticks() / 1000 - start_time > timeForPlayer and not shoot and not player.isJump:
@@ -312,36 +315,95 @@ def drawInstructionsWindow():
     textForGamePlay = myFont.render("player's side. The fight goes on until one of the players runs out of health.",
                                     False, (255, 255, 255))
     win.blit(textForGamePlay, (20, 460))
-    textForGamePlay = haveFunFont.render("Have Fun Playing!", False, (255, 255, 255))
+    textForGamePlay = largeFont.render("Have Fun Playing!", False, (255, 255, 255))
     win.blit(textForGamePlay, (500, 520))
     pygame.display.update()
 
 
 def redrawGameWindow():
-    global fps
     win.blit(background, (0, 0))
-    win.blit(tiles, (0, 54))
+    win.blit(tiles, (tilesX, tilesY))
     if player1.health > 0:
         player1.draw(win)
     if player2.health > 0:
         player2.draw(win)
     weapon.draw(win)
     player.collide(platforms, hitMyHead)
+    # Draws the score
     textSurface = myFont.render(str(playerTime), False, (255, 255, 255))
     win.blit(textSurface, (1150, 30))
+    textSurface = myFont.render(str(player1.wins), False, (255, 255, 255))
+    win.blit(textSurface, (430, 10))
+    textSurface = myFont.render(str(player2.wins), False, (255, 255, 255))
+    win.blit(textSurface, (690, 10))
+    # draws whose turn it is
     if isPlayerOne:
         textSurface = myFont.render("Ghost", False, (255, 255, 255))
         win.blit(textSurface, (530, 10))
     else:
         textSurface = myFont.render("Alien", False, (255, 255, 255))
         win.blit(textSurface, (530, 10))
+    if level == 2:
+        strengthbarImage = pygame.Surface(((strength * 100) - 50, 20))
+        strengthbar = strengthbarImage.get_rect()
+        strengthbar.x = 10
+        strengthbar.y = 20
+        strengthbarColor = (0, 255, 0)
+        outerLayer = pygame.Surface((102, 22))
+        blackness = outerLayer.get_rect()
+        blackness.x = 9
+        blackness.y = 19
+        pygame.draw.rect(win, (0, 0, 0), blackness)
+        pygame.draw.rect(win, strengthbarColor, strengthbar)
+        textSurface = myFont.render("Power", False, (255, 255, 255))
+        win.blit(textSurface, (115, 6))
+    platforms.draw(win)
     pygame.display.update()
 
 
-def LevelOneSetup():
-    global player, player1, players, player2, weapon, playerSpriteHead, playerSpriteBody
+def PlanetOneSetup():
+    global player, player1, players, player2, weapon, playerSpriteHead, playerSpriteBody, tilesX, tilesY, strength, \
+            background, tiles, platforms
     player1 = Player(75, 333, 29, 45)
     player2 = Player(1017, 240, 29, 45)
+    player1.characterIdleR = character1R
+    player1.characterIdleL = character1L
+    player1.characterLeft = character1Left
+    player1.characterRight = character1Right
+    player2.characterIdleR = character2R
+    player2.characterIdleL = character2L
+    player2.characterLeft = character2Left
+    player2.characterRight = character2Right
+    player = player1
+    strength = 1
+    # clear the players from the sprite in case they are both added so no self collision is done
+    players = pygame.sprite.Group()
+    # at the beginning of the game add the second player for collision with the ball because player one starts first
+    playerSpriteHead = PlayerSprites(player2.rect.x, player2.rect.y, 29, 22.5)
+    playerSpriteBody = PlayerSprites(player2.rect.x, player2.rect.y + 22.5, 29, 22.5)
+    players.add(playerSpriteHead)
+    players.add(playerSpriteBody)
+    weapon = Weapon(player.pos.x + 20, player.pos.y + 30, 9)
+    tilesX = 0
+    tilesY = 54
+    background = pygame.image.load('Background.jpg')
+    tiles = pygame.image.load('Tiles.png')
+    platforms = pygame.sprite.Group()
+    for plat in PLATFORM_LEVEL1_LIST_LEFT:
+        p = Platform(*plat)
+        platforms.add(p)
+    for plat in PLATFORM_LEVEL1_LIST_RIGHT:
+        p = Platform(*plat)
+        platforms.add(p)
+
+
+def PlanetTwoSetup(p1Wins, p2Wins):
+    global player, player1, players, player2, weapon, playerSpriteHead, playerSpriteBody, tilesY, platforms, tiles, \
+        background, strength
+    player1 = Player(194, 356, 29, 45)
+    player2 = Player(924, 130, 29, 45)
+    player1.wins = p1Wins
+    player2.wins = p2Wins
     player1.characterIdleR = character1R
     player1.characterIdleL = character1L
     player1.characterLeft = character1Left
@@ -359,21 +421,99 @@ def LevelOneSetup():
     players.add(playerSpriteHead)
     players.add(playerSpriteBody)
     weapon = Weapon(player.pos.x + 20, player.pos.y + 30, 9)
+    strength = random.uniform(0.5, 1.5)
+    tiles = pygame.image.load('Level2.png')
+    background = pygame.image.load('Planet2.png')
+    tilesY = 0
+    platforms.empty()
+    for platf in PLATFORM_LEVEL2_LIST_LEFT:
+        p = Platform(*platf)
+        platforms.add(p)
+    for platf in PLATFORM_LEVEL2_LIST_RIGHT:
+        p = Platform(*platf)
+        platforms.add(p)
+
+
+def PlanetThreeSetup(p1Wins, p2Wins):
+    global player, player1, players, player2, weapon, playerSpriteHead, playerSpriteBody, tilesY, platforms, tiles, \
+        background, strength
+    player1 = Player(29, 380, 29, 45)
+    player2 = Player(1025, 181, 29, 45)
+    player1.wins = p1Wins
+    player2.wins = p2Wins
+    player1.characterIdleR = character1R
+    player1.characterIdleL = character1L
+    player1.characterLeft = character1Left
+    player1.characterRight = character1Right
+    player2.characterIdleR = character2R
+    player2.characterIdleL = character2L
+    player2.characterLeft = character2Left
+    player2.characterRight = character2Right
+    # Set the gravity for the third planet
+    player1.gravity = 0.2
+    player2.gravity = 0.2
+    # reset strength back to normal
+    strength = 1
+    player = player1
+    # remove the players from the sprite in case they are both added so no self collision is done
+    players = pygame.sprite.Group()
+    # at the beginning of the game add the second player for collision with the ball because player one starts first
+    playerSpriteHead = PlayerSprites(player2.rect.x, player2.rect.y, 29, 22.5)
+    playerSpriteBody = PlayerSprites(player2.rect.x, player2.rect.y + 22.5, 29, 22.5)
+    players.add(playerSpriteHead)
+    players.add(playerSpriteBody)
+    weapon = Weapon(player.pos.x + 20, player.pos.y + 30, 9)
+    tiles = pygame.image.load('Level3.png')
+    background = pygame.image.load('Planet3.png')
+    platforms.empty()
+    for platf in PLATFORM_LEVEL3_LIST_LEFT:
+        p = Platform(*platf)
+        platforms.add(p)
+    for platf in PLATFORM_LEVEL3_LIST_RIGHT:
+        p = Platform(*platf)
+        platforms.add(p)
 
 
 def drawEndScreen():
     win.blit(background, (0, 0))
-    win.blit(tiles, (0, 54))
+    win.blit(tiles, (tilesX, tilesY))
     if player1.health > 0:
         player1.draw(win)
         textSurface = myFont.render("Congratulations Ghost", False, (255, 255, 255))
-        win.blit(textSurface, (450, 300))
+        win.blit(textSurface, (450, 60))
     if player2.health > 0:
         player2.draw(win)
         textSurface = myFont.render("Congratulations Alien", False, (255, 255, 255))
-        win.blit(textSurface, (450, 300))
-    textSurface = myFont.render("Press N for a new game", False, (255, 255, 255))
-    win.blit(textSurface, (430, 350))
+        win.blit(textSurface, (450, 60))
+    textSurface = myFont.render("Press N for the next planet", False, (255, 255, 255))
+    win.blit(textSurface, (430, 110))
+    if level == 1:
+        textSurface = myFont.render("Tip: Your strength may not be up to you here", False, (255, 255, 255))
+        win.blit(textSurface, (340, 140))
+    if level == 2:
+        textSurface = myFont.render("Tip: Gravity is a little different here", False, (255, 255, 255))
+        win.blit(textSurface, (380, 140))
+    pygame.display.update()
+
+
+def drawWinnerScreen():
+    winnerBackground = pygame.image.load('WinnerBackground.png')
+    win.blit(winnerBackground, (0, 0))
+    if player1.wins == 2:
+        textSurface = largeFont.render("Congratulations Ghost", False, (255, 255, 255))
+        win.blit(textSurface, (300, 150))
+        textSurface = largeFont.render("You are the ruler of this solar system", False, (255, 255, 255))
+        win.blit(textSurface, (100, 210))
+        win.blit(player1.characterIdleR, (600, 300))
+    elif player2.wins == 2:
+        textSurface = largeFont.render("Congratulations Alien", False, (255, 255, 255))
+        win.blit(textSurface, (300, 150))
+        textSurface = largeFont.render("You are the ruler of the solar system GEMBO", False, (255, 255, 255))
+        win.blit(textSurface, (100, 210))
+        win.blit(player2.characterIdleR, (600, 300))
+
+    textSurface = myFont.render("Press N if you want to challenge each other again", False, (255, 255, 255))
+    win.blit(textSurface, (300, 400))
     pygame.display.update()
 
 
@@ -398,6 +538,7 @@ def findAngle(position):
 
 # Draw endgame screen if someone lost
 def EndLoop():
+    global level
     EndGame = True
     while EndGame:
         clock.tick(fps)
@@ -406,8 +547,16 @@ def EndLoop():
             if event.type == pygame.QUIT:
                 quit()
             if keys[pygame.K_n]:
-                MenuLoop()
-        drawEndScreen()
+                if level < 4 and player1.wins != 2 and player2.wins != 2:
+                    level += 1
+                    MainLoop()
+                elif level >= 2:
+                    MenuLoop()
+        if level < 4 and player1.wins != 2 and player2.wins != 2:
+            drawEndScreen()
+        elif level >= 2:
+            drawWinnerScreen()
+
 
 # Starts the game with the Menu screen
 if __name__ == '__main__':

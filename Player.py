@@ -29,13 +29,6 @@ character2LDeath = [pygame.image.load('Alien/DeathL0.png'), pygame.image.load('A
                     pygame.image.load('Alien/DeathL2.png'), pygame.image.load('Alien/DeathL3.png'),
                     pygame.image.load('Alien/DeathL4.png'), pygame.image.load('Alien/DeathL5.png')]
 vec = pygame.math.Vector2
-platforms = pygame.sprite.Group()
-for plat in PLATFORM_LIST_LEFT:
-    p = Platform(*plat)
-    platforms.add(p)
-for plat in PLATFORM_LIST_RIGHT:
-    p = Platform(*plat)
-    platforms.add(p)
 
 
 class Player(pygame.sprite.Sprite):
@@ -66,6 +59,8 @@ class Player(pygame.sprite.Sprite):
         self.characterLeft = []
         self.characterIdleR = []
         self.characterIdleL = []
+        self.wins = 0
+        self.gravity = 0.5
 
     # Checks for collisions and helps with jumping
     def collide(self, spriteGroup, IhitMyHead):
@@ -100,14 +95,14 @@ class Player(pygame.sprite.Sprite):
                     self.isJump = False
             else:
                 if self.vel.y < 25:
-                    self.vel.y = self.vel.y + 0.5 * 10
+                    self.vel.y = self.vel.y + self.gravity * 10
                 self.pos.y += self.vel.y
         elif self.vel.y == 0 and not hits:
-            self.vel.y = self.vel.y + 0.5 * 10
+            self.vel.y = self.vel.y + self.gravity * 10
         if IhitMyHead:
             self.pos.y += blockSubtract - characterSubtract
 
-    def jump(self):
+    def jump(self, platforms):
         hits = pygame.sprite.spritecollide(self, platforms, False)
         if hits:
             self.vel.y = -20
