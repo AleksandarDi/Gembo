@@ -385,8 +385,8 @@ def PlanetOneSetup():
     weapon = Weapon(player.pos.x + 20, player.pos.y + 30, 9)
     tilesX = 0
     tilesY = 54
-    background = pygame.image.load('Background.jpg')
-    tiles = pygame.image.load('Tiles.png')
+    background = pygame.image.load('Planet1.jpg')
+    tiles = pygame.image.load('Level1.png')
     platforms = pygame.sprite.Group()
     for plat in PLATFORM_LEVEL1_LIST_LEFT:
         p = Platform(*plat)
