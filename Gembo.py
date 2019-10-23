@@ -2,6 +2,7 @@ from Player import *
 from Weapon import *
 import random
 
+# JUMPING HAS SMALL BUGS
 # Setup code
 global level, background, tiles, tilesX, tilesY, platforms
 pygame.init()
@@ -82,7 +83,6 @@ def MainLoop():
     start_time = timer.get_ticks() / 1000
     # Start main game loop
     while true:
-        # print(pygame.mouse.get_pos())
         clock.tick(fps)
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -178,8 +178,8 @@ def MainLoop():
                 start_time = timer.get_ticks() / 1000
                 if isPlayerOne:
                     if playerCollide[0].rect[1] == player2.rect[1]:
-                        damage = 30
-                        healthCut = 10.5
+                        damage = 40
+                        healthCut = 13
                     player2.health -= damage
                     player2.healthbarWidth -= healthCut
                     if 40 < player2.health < 70:
@@ -198,8 +198,8 @@ def MainLoop():
                         true = False
                 else:
                     if playerCollide[0].rect[1] == player1.rect[1]:
-                        damage = 30
-                        healthCut = 10.5
+                        damage = 40
+                        healthCut = 13
                     player1.health -= damage
                     player1.healthbarWidth -= healthCut
                     if 40 < player1.health < 70:
@@ -357,7 +357,6 @@ def redrawGameWindow():
         pygame.draw.rect(win, strengthbarColor, strengthbar)
         textSurface = myFont.render("Power", False, (255, 255, 255))
         win.blit(textSurface, (115, 6))
-    platforms.draw(win)
     pygame.display.update()
 
 

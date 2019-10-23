@@ -133,7 +133,7 @@ class Player(pygame.sprite.Sprite):
         self.healthbar = self.healthbarImage.get_rect()
         self.healthbar.x = self.pos.x
         self.healthbar.y = self.pos.y - 6
-        outerLayer = pygame.Surface((31, 5))
+        outerLayer = pygame.Surface((34, 5))
         blackness = outerLayer.get_rect()
         blackness.x = self.pos.x - 1
         blackness.y = self.pos.y - 7
